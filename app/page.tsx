@@ -43,13 +43,27 @@ const TIER_COPY: Record<string, string> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Responsive hook
+// ─────────────────────────────────────────────────────────────────────────────
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Shared layout primitives
 // ─────────────────────────────────────────────────────────────────────────────
 
 function GrainyBg() {
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#ECEAE6' }}>
-      {/* blurred colour blobs */}
       <div style={{
         position: 'absolute', inset: '-10%',
         backgroundImage: [
@@ -60,7 +74,6 @@ function GrainyBg() {
         ].join(', '),
         filter: 'blur(40px) saturate(115%)',
       }} />
-      {/* film grain */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")`,
@@ -95,19 +108,23 @@ function Eyebrow({ children, color = 'rgba(0,0,0,0.5)' }: { children: React.Reac
   );
 }
 
-function Logo() {
+function Logo({ small }: { small?: boolean }) {
   return (
-    <div style={{ position: 'absolute', top: 28, left: 40, zIndex: 10 }}>
+    <div style={{ position: 'absolute', top: small ? 20 : 28, left: small ? 24 : 40, zIndex: 10 }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/discover-logo-black.png" alt="Discover" style={{ height: 24, width: 'auto', display: 'block' }} />
+      <img src="/discover-logo-black.png" alt="Discover" style={{ height: small ? 20 : 24, width: 'auto', display: 'block' }} />
     </div>
   );
 }
 
-function FooterRail() {
+function FooterRail({ compact }: { compact?: boolean }) {
   return (
     <div style={{
-      position: 'absolute', bottom: 22, left: 40, right: 40, zIndex: 10,
+      position: 'absolute',
+      bottom: compact ? 16 : 22,
+      left: compact ? 24 : 40,
+      right: compact ? 24 : 40,
+      zIndex: 10,
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       fontSize: 11, letterSpacing: '0.02em',
       fontFamily: '"Geist", system-ui, sans-serif', color: '#0A0A0A',
@@ -121,7 +138,7 @@ function FooterRail() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Medal SVG (faithful port from design)
+// Medal SVG
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Medal({ tier, size = 200 }: { tier: 'gold' | 'silver' | 'bronze'; size?: number }) {
@@ -157,25 +174,20 @@ function Medal({ tier, size = 200 }: { tier: 'gold' | 'silver' | 'bronze'; size?
         </linearGradient>
         <filter id={`${id}-bl`}><feGaussianBlur stdDeviation="2.5" /></filter>
       </defs>
-      {/* Ribbon left */}
       <polygon points="38,0 66,0 102,96 88,103"  fill={`url(#${id}-sR)`} />
       <polygon points="66,0 80,0 110,90 102,96"  fill="#FAFAFA" />
       <polygon points="80,0 98,0 116,84 110,90"  fill={`url(#${id}-sB)`} />
       <polygon points="98,0 100,0 116,84 110,90" fill="rgba(0,0,0,0.12)" />
-      {/* Ribbon right */}
       <polygon points="162,0 134,0 98,96 112,103"  fill={`url(#${id}-sB)`} />
       <polygon points="134,0 120,0 90,90 98,96"    fill="#FAFAFA" />
       <polygon points="120,0 102,0 84,84 90,90"    fill={`url(#${id}-sR)`} />
       <polygon points="102,0 100,0 84,84 90,90"    fill="rgba(0,0,0,0.12)" />
       <polygon points="88,103 112,103 100,116"     fill="rgba(0,0,0,0.35)" />
-      {/* Disc shadow */}
       <ellipse cx="100" cy="268" rx="58" ry="6" fill="rgba(0,0,0,0.22)" filter={`url(#${id}-bl)`} />
-      {/* Disc */}
       <circle cx="100" cy="196" r="72" fill={`url(#${id}-r)`} />
       <circle cx="100" cy="196" r="63" fill={`url(#${id}-f)`} />
       <circle cx="100" cy="196" r="63" fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="0.8" />
       <circle cx="100" cy="196" r="62" fill="none" stroke={p.shine} strokeWidth="0.6" opacity="0.55" />
-      {/* Laurel */}
       <g opacity="0.42" fill={p.glyph}>
         {Array.from({ length: 7 }, (_, i) => {
           const a = (-75 + i * 18) * Math.PI / 180;
@@ -206,8 +218,135 @@ function Screen1({ email, setEmail, onSubmit }: {
   onSubmit: () => void;
 }) {
   const [focused, setFocused] = useState(false);
+  const isMobile = useIsMobile();
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); if (email.trim()) onSubmit(); };
 
+  if (isMobile) {
+    return (
+      <div style={{ position: 'relative', minHeight: '100dvh', overflow: 'hidden', color: '#0A0A0A' }}>
+        <GrainyBg />
+        <Logo small />
+
+        <div style={{
+          position: 'relative', zIndex: 3,
+          minHeight: '100dvh',
+          display: 'flex', flexDirection: 'column',
+          padding: '72px 24px 80px',
+          gap: 28,
+        }}>
+          {/* Heading block */}
+          <div style={{ paddingTop: 8 }}>
+            <Eyebrow color="rgba(0,0,0,0.55)">01 — AI Visibility Audit</Eyebrow>
+            <h1 style={{
+              fontFamily: '"Instrument Serif", serif',
+              fontSize: 52, lineHeight: 0.94,
+              fontWeight: 400, letterSpacing: '-0.025em', margin: '12px 0 0',
+            }}>
+              How visible<br />is your brand<br />
+              <em style={{ fontStyle: 'italic' }}>to AI?</em>
+            </h1>
+            <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                { name: 'ChatGPT', dot: '#10A37F' },
+                { name: 'Gemini',  dot: '#4285F4' },
+                { name: 'AI Mode', dot: '#FF6E3D' },
+              ].map(c => (
+                <div key={c.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(8px)',
+                  padding: '7px 12px', borderRadius: 999,
+                  fontSize: 12, fontWeight: 500, border: '1px solid rgba(255,255,255,0.6)',
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 999, background: c.dot, flexShrink: 0 }} />
+                  {c.name}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Form card */}
+          <form onSubmit={handleSubmit} style={{
+            background: '#fff',
+            borderRadius: 22,
+            boxShadow: '0 20px 60px -15px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.8) inset',
+            padding: '24px 20px',
+            width: '100%',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <Eyebrow>Brand audit</Eyebrow>
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%', background: '#0A0A0A',
+                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18, fontWeight: 300, lineHeight: 1,
+              }}>+</div>
+            </div>
+
+            <div style={{
+              fontFamily: '"Instrument Serif", serif',
+              fontSize: 32, lineHeight: 1.05,
+              letterSpacing: '-0.015em', marginBottom: 20,
+            }}>
+              Enter your<br />work email.
+            </div>
+
+            <label style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: '#F2F0EC', borderRadius: 14,
+              padding: '15px 16px', marginBottom: 12, cursor: 'text',
+              boxShadow: focused ? '0 0 0 2px rgba(255,110,60,0.35)' : 'none',
+              transition: 'box-shadow 0.18s',
+            }}>
+              <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: 16, flexShrink: 0, lineHeight: 1 }}>@</span>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                placeholder="you@yourbrand.com"
+                style={{
+                  flex: 1, border: 'none', background: 'transparent', outline: 'none',
+                  fontSize: 17, color: '#0A0A0A', fontWeight: 500,
+                  fontFamily: '"Geist", system-ui, sans-serif',
+                  minWidth: 0,
+                }}
+                autoComplete="email"
+                spellCheck={false}
+                inputMode="email"
+              />
+              <span style={{ width: 5, height: 18, background: '#FF6E3D', flexShrink: 0, borderRadius: 2 }} />
+            </label>
+
+            <button type="submit" style={{
+              width: '100%', padding: '17px 18px', borderRadius: 14, border: 'none',
+              background: '#0A0A0A', color: '#fff', fontSize: 16, fontWeight: 500,
+              letterSpacing: '0.01em', fontFamily: '"Geist", system-ui, sans-serif',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span>Run the audit</span>
+              <span style={{ fontFamily: '"Geist Mono", monospace', fontSize: 15 }}>→</span>
+            </button>
+
+            <div style={{
+              marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.08)',
+              display: 'flex', justifyContent: 'flex-end',
+            }}>
+              <Link href="/leaderboard" style={{
+                color: '#0A0A0A', fontWeight: 500, fontSize: 13,
+                textDecoration: 'none', fontFamily: '"Geist", system-ui, sans-serif',
+              }}>
+                See live leaderboard →
+              </Link>
+            </div>
+          </form>
+        </div>
+
+        <FooterRail compact />
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', color: '#0A0A0A' }}>
       <GrainyBg />
@@ -220,7 +359,6 @@ function Screen1({ email, setEmail, onSubmit }: {
         alignItems: 'center', gap: 'clamp(24px,4vw,80px)',
         padding: 'clamp(80px,9vh,130px) clamp(40px,6vw,100px) clamp(70px,8vh,120px)',
       }}>
-        {/* LEFT */}
         <div style={{ maxWidth: 640 }}>
           <Eyebrow color="rgba(0,0,0,0.55)">01 — AI Visibility Audit</Eyebrow>
           <h1 style={{
@@ -250,7 +388,6 @@ function Screen1({ email, setEmail, onSubmit }: {
           </div>
         </div>
 
-        {/* RIGHT — card */}
         <form onSubmit={handleSubmit} style={{
           background: '#fff',
           borderRadius: 'clamp(18px,1.8vw,26px)',
@@ -300,7 +437,6 @@ function Screen1({ email, setEmail, onSubmit }: {
               spellCheck={false}
               autoFocus
             />
-            {/* orange caret indicator */}
             <span style={{ width: 6, height: 18, background: '#FF6E3D', flexShrink: 0 }} />
           </label>
 
@@ -334,11 +470,12 @@ function Screen1({ email, setEmail, onSubmit }: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Screen 2: Analysing (radar animation)
+// Screen 2: Analysing
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Screen2({ email }: { email: string }) {
   const [phraseIdx, setPhraseIdx] = useState(0);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setPhraseIdx(0);
@@ -347,11 +484,98 @@ function Screen2({ email }: { email: string }) {
   }, []);
 
   const steps = LOADING_PHRASES.slice(0, 5).map((label, i) => ({
-    label: ['Crawl', 'ChatGPT', 'Gemini', 'AI Mode', 'Compare vertical'][i],
+    label: ['Crawl', 'ChatGPT', 'Gemini', 'AI Mode', 'Compare'][i],
     done: phraseIdx > i,
     active: phraseIdx === i || (i === 4 && phraseIdx >= 4),
   }));
 
+  if (isMobile) {
+    return (
+      <div style={{ position: 'relative', minHeight: '100dvh', overflow: 'hidden', color: '#0A0A0A' }}>
+        <GrainyBg />
+        <Logo small />
+
+        <div style={{
+          position: 'relative', zIndex: 3,
+          minHeight: '100dvh',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          padding: '72px 24px 80px',
+        }}>
+          {/* Top: heading + phrase */}
+          <div style={{ paddingTop: 8 }}>
+            <Eyebrow color="rgba(0,0,0,0.55)">02 — Running</Eyebrow>
+            <h1 style={{
+              fontFamily: '"Instrument Serif", serif',
+              fontSize: 48, lineHeight: 0.94,
+              fontWeight: 400, letterSpacing: '-0.025em', margin: '12px 0 28px',
+            }}>
+              Comparing<br />
+              <em style={{ fontStyle: 'italic' }}>across</em><br />
+              your vertical…
+            </h1>
+            <div style={{ overflow: 'hidden', minHeight: 52 }}>
+              <div key={phraseIdx} style={{
+                fontFamily: '"Instrument Serif", serif',
+                fontSize: 28, lineHeight: 1.1,
+                letterSpacing: '-0.015em',
+                animation: 'phraseFade 1.05s ease both',
+              }}>{LOADING_PHRASES[phraseIdx]}</div>
+              <div style={{
+                marginTop: 6, fontFamily: '"Geist Mono", monospace',
+                fontSize: 11, color: 'rgba(0,0,0,0.55)',
+              }}>{email}</div>
+            </div>
+          </div>
+
+          {/* Middle: radar (compact) */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, padding: '20px 0' }}>
+            <div style={{ position: 'relative', width: 200, height: 200 }}>
+              <svg viewBox="-100 -100 200 200" width="200" height="200" style={{ overflow: 'visible' }}>
+                {[28, 46, 65, 84].map((r, i) => (
+                  <circle key={i} r={r} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
+                ))}
+              </svg>
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: '50%', background: '#FF6E3D',
+                  animation: 'centerPulse 1.8s ease-out infinite, dotBeat 1.4s ease-in-out infinite',
+                }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom: step tracker */}
+          <div style={{
+            background: '#fff', borderRadius: 18,
+            boxShadow: '0 20px 60px -20px rgba(0,0,0,0.12)',
+            padding: '16px 18px',
+          }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {steps.map(s => (
+                <div key={s.label} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  opacity: s.done || s.active ? 1 : 0.4,
+                  flex: '1 0 calc(50% - 10px)',
+                }}>
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    background: s.done ? '#0A0A0A' : s.active ? '#FF6E3D' : 'transparent',
+                    border: !s.done && !s.active ? '1.5px dashed rgba(0,0,0,0.35)' : 'none',
+                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10,
+                  }}>{s.done ? '✓' : ''}</div>
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <FooterRail compact />
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', color: '#0A0A0A' }}>
       <GrainyBg />
@@ -367,8 +591,6 @@ function Screen2({ email }: { email: string }) {
         columnGap: 'clamp(24px,4vw,80px)',
         alignItems: 'start',
       }}>
-
-        {/* Left: heading + cycling phrase */}
         <div style={{ gridColumn: 1, gridRow: '1 / span 2', alignSelf: 'center' }}>
           <Eyebrow color="rgba(0,0,0,0.55)">02 — Running</Eyebrow>
           <h1 style={{
@@ -394,7 +616,6 @@ function Screen2({ email }: { email: string }) {
           </div>
         </div>
 
-        {/* Right: radar */}
         <div style={{
           gridColumn: 2, gridRow: '1 / span 2',
           position: 'relative',
@@ -406,7 +627,6 @@ function Screen2({ email }: { email: string }) {
               <circle key={i} r={r} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
             ))}
           </svg>
-          {/* pulsing center */}
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
             <div style={{
               width: 18, height: 18, borderRadius: '50%', background: '#FF6E3D',
@@ -415,7 +635,6 @@ function Screen2({ email }: { email: string }) {
           </div>
         </div>
 
-        {/* Bottom: step tracker */}
         <div style={{
           gridColumn: '1 / span 2', gridRow: 3,
           background: '#fff', borderRadius: 18,
@@ -453,10 +672,11 @@ function Screen3({ result, onReset, onLeaderboard }: {
   onLeaderboard: () => void;
 }) {
   const [display, setDisplay] = useState(0);
+  const isMobile = useIsMobile();
   const tier = result.placing.toLowerCase() as 'gold' | 'silver' | 'bronze';
   const ringColor = RING_COLOR[result.placing] ?? '#FF6E3D';
 
-  const ringSize = 240;
+  const ringSize = isMobile ? 200 : 240;
   const stroke   = 16;
   const r        = (ringSize - stroke) / 2;
   const c        = 2 * Math.PI * r;
@@ -481,6 +701,118 @@ function Screen3({ result, onReset, onLeaderboard }: {
     ? 'Solid foundation. AI knows you, but rarely recommends you yet.'
     : 'You have a foothold. Most lift comes from off-site mentions.';
 
+  if (isMobile) {
+    return (
+      <div className="fade-in-up" style={{ position: 'relative', minHeight: '100dvh', overflow: 'hidden', color: '#0A0A0A' }}>
+        <GrainyBg />
+        <Logo small />
+
+        <div style={{
+          position: 'relative', zIndex: 3,
+          minHeight: '100dvh',
+          display: 'flex', flexDirection: 'column',
+          padding: '72px 24px 80px',
+          gap: 20,
+        }}>
+          {/* Score card */}
+          <div style={{
+            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.8)',
+            borderRadius: 22,
+            boxShadow: '0 20px 60px -15px rgba(0,0,0,0.2)',
+            padding: '22px 20px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <Eyebrow>AI Visibility Score</Eyebrow>
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%', background: '#0A0A0A',
+                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18, fontWeight: 300,
+              }}>+</div>
+            </div>
+
+            {/* Score ring */}
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 6px' }}>
+              <div style={{ position: 'relative', width: ringSize, height: ringSize }}>
+                <svg width={ringSize} height={ringSize} style={{ transform: 'rotate(-90deg)' }}>
+                  <circle cx={ringSize/2} cy={ringSize/2} r={r}
+                    stroke="rgba(0,0,0,0.08)" strokeWidth={stroke} fill="none" />
+                  <circle cx={ringSize/2} cy={ringSize/2} r={r}
+                    stroke={ringColor} strokeWidth={stroke} fill="none"
+                    strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" />
+                </svg>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <div style={{
+                    fontFamily: '"Instrument Serif", serif',
+                    fontSize: 80, fontWeight: 400, lineHeight: 1, letterSpacing: '-0.02em',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>{Math.round(display)}</div>
+                  <div style={{
+                    fontFamily: '"Geist Mono", monospace', fontSize: 10,
+                    letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: 4, opacity: 0.6,
+                  }}>out of 100</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Medal row */}
+            <div style={{
+              paddingTop: 14, borderTop: '1px solid rgba(0,0,0,0.08)',
+              display: 'flex', alignItems: 'center', gap: 16,
+            }}>
+              <Medal tier={tier} size={72} />
+              <div>
+                <div style={{
+                  fontFamily: '"Instrument Serif", serif',
+                  fontSize: 30, lineHeight: 1, letterSpacing: '-0.02em',
+                }}>{result.placing}</div>
+                <div style={{ marginTop: 5, fontSize: 13, color: 'rgba(0,0,0,0.6)', lineHeight: 1.4 }}>
+                  {tierBlurb}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Text + CTA */}
+          <div>
+            <Eyebrow color="rgba(0,0,0,0.55)">03 — Result · {result.brand}</Eyebrow>
+            <h1 style={{
+              fontFamily: '"Instrument Serif", serif',
+              fontSize: 40, lineHeight: 0.96,
+              fontWeight: 400, letterSpacing: '-0.025em', margin: '10px 0 0',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              You&apos;re at <em style={{ fontStyle: 'italic' }}>{Math.round(display)}</em><br />
+              out of 100.
+            </h1>
+            <p style={{
+              marginTop: 14, fontSize: 14,
+              lineHeight: 1.55, color: 'rgba(0,0,0,0.65)',
+            }}>{TIER_COPY[result.placing]}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
+              <button onClick={onLeaderboard} style={{
+                padding: '15px 22px', borderRadius: 999, border: 'none',
+                background: '#0A0A0A', color: '#fff',
+                fontSize: 15, fontWeight: 500, fontFamily: '"Geist", system-ui, sans-serif',
+              }}>View leaderboard →</button>
+              <button onClick={onReset} style={{
+                padding: '15px 22px', borderRadius: 999,
+                background: 'transparent', border: '1px solid rgba(0,0,0,0.2)', color: '#0A0A0A',
+                fontSize: 15, fontWeight: 500, fontFamily: '"Geist", system-ui, sans-serif',
+              }}>Check another brand</button>
+            </div>
+          </div>
+        </div>
+
+        <FooterRail compact />
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div className="fade-in-up" style={{ position: 'relative', height: '100vh', overflow: 'hidden', color: '#0A0A0A' }}>
       <GrainyBg />
@@ -493,8 +825,6 @@ function Screen3({ result, onReset, onLeaderboard }: {
         display: 'grid', gridTemplateColumns: '1fr 1fr',
         alignItems: 'center', gap: 'clamp(24px,4vw,80px)',
       }}>
-
-        {/* LEFT */}
         <div style={{ maxWidth: 540 }}>
           <Eyebrow color="rgba(0,0,0,0.55)">03 — Result · {result.brand}</Eyebrow>
           <h1 style={{
@@ -524,7 +854,6 @@ function Screen3({ result, onReset, onLeaderboard }: {
           </div>
         </div>
 
-        {/* RIGHT — card */}
         <div style={{
           background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.8)',
@@ -542,13 +871,12 @@ function Screen3({ result, onReset, onLeaderboard }: {
             }}>+</div>
           </div>
 
-          {/* Score ring */}
           <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 8px' }}>
-            <div style={{ position: 'relative', width: ringSize, height: ringSize }}>
-              <svg width={ringSize} height={ringSize} style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx={ringSize/2} cy={ringSize/2} r={r}
+            <div style={{ position: 'relative', width: 240, height: 240 }}>
+              <svg width={240} height={240} style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx={120} cy={120} r={r}
                   stroke="rgba(0,0,0,0.08)" strokeWidth={stroke} fill="none" />
-                <circle cx={ringSize/2} cy={ringSize/2} r={r}
+                <circle cx={120} cy={120} r={r}
                   stroke={ringColor} strokeWidth={stroke} fill="none"
                   strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" />
               </svg>
@@ -569,7 +897,6 @@ function Screen3({ result, onReset, onLeaderboard }: {
             </div>
           </div>
 
-          {/* Medal row */}
           <div style={{
             marginTop: 12, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.08)',
             display: 'flex', alignItems: 'center', gap: 20,
@@ -630,8 +957,8 @@ export default function Home() {
   if (appState === 'loading') return <Screen2 email={email} />;
   if (appState === 'result' && result) return <Screen3 result={result} onReset={handleReset} onLeaderboard={handleLeaderboard} />;
   if (appState === 'error') return (
-    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ECEAE6' }}>
-      <div style={{ textAlign: 'center', fontFamily: '"Geist", system-ui, sans-serif' }}>
+    <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ECEAE6' }}>
+      <div style={{ textAlign: 'center', fontFamily: '"Geist", system-ui, sans-serif', padding: '0 24px' }}>
         <p style={{ color: 'rgba(0,0,0,0.6)', marginBottom: 16 }}>Something went wrong. Please try again.</p>
         <button onClick={handleReset} style={{
           padding: '12px 24px', borderRadius: 999, background: '#0A0A0A', color: '#fff',
