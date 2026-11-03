@@ -92,9 +92,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Could not extract domain from email' }, { status: 400 });
     }
 
-    // Look up in static brand data (exact domain match after normalization)
+    // Look up in static brand data.
+    // Try exact match first, then progressively strip subdomains
+    // e.g. pt.naos.com → naos.com so subdomain emails still resolve correctly.
     const brands = brandsData as Brand[];
-    const found  = brands.find(b => normalizeDomain(b.domain) === normalized);
+    const domainCandidates = (d: string): string[] => {
+      const parts = d.split('.');
+      return parts.map((_, i) => parts.slice(i).join('.')).filter(c => c.includes('.'));
+    };
+    const found = domainCandidates(normalized)
+      .map(candidate => brands.find(b => normalizeDomain(b.domain) === candidate))
+      .find(Boolean);
 
     let result: Brand;
     if (found) {
