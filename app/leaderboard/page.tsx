@@ -42,6 +42,21 @@ function downloadCSV(entries: LeaderboardEntry[]) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Responsive hook
+// ─────────────────────────────────────────────────────────────────────────────
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Shared layout primitives
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -92,10 +107,14 @@ function Eyebrow({ children, color = 'rgba(0,0,0,0.5)' }: { children: React.Reac
   );
 }
 
-function FooterRail() {
+function FooterRail({ compact }: { compact?: boolean }) {
   return (
     <div style={{
-      position: 'absolute', bottom: 22, left: 48, right: 48, zIndex: 10,
+      position: 'absolute',
+      bottom: compact ? 16 : 22,
+      left: compact ? 24 : 48,
+      right: compact ? 24 : 48,
+      zIndex: 10,
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       fontSize: 11, letterSpacing: '0.02em',
       fontFamily: '"Geist", system-ui, sans-serif', color: '#0A0A0A',
@@ -109,13 +128,13 @@ function FooterRail() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Podium card — rank-based (0=gold, 1=silver, 2=bronze)
+// Podium card
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PODIUM_STYLES = [
-  { bg: '#FF6E3D', textColor: '#fff',    rankColor: 'rgba(255,255,255,0.7)', height: 280 }, // #1
-  { bg: '#E8E5E0', textColor: '#0A0A0A', rankColor: 'rgba(0,0,0,0.4)',       height: 220 }, // #2
-  { bg: '#F2DFCF', textColor: '#0A0A0A', rankColor: 'rgba(0,0,0,0.4)',       height: 200 }, // #3
+  { bg: '#FF6E3D', textColor: '#fff',    rankColor: 'rgba(255,255,255,0.7)', height: 280 },
+  { bg: '#E8E5E0', textColor: '#0A0A0A', rankColor: 'rgba(0,0,0,0.4)',       height: 220 },
+  { bg: '#F2DFCF', textColor: '#0A0A0A', rankColor: 'rgba(0,0,0,0.4)',       height: 200 },
 ];
 
 function PodiumCard({ entry, rankIdx, isYou }: { entry: LeaderboardEntry; rankIdx: number; isYou: boolean }) {
@@ -135,7 +154,6 @@ function PodiumCard({ entry, rankIdx, isYou }: { entry: LeaderboardEntry; rankId
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Top row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <span style={{
           fontFamily: '"Geist Mono", ui-monospace, monospace',
@@ -150,7 +168,6 @@ function PodiumCard({ entry, rankIdx, isYou }: { entry: LeaderboardEntry; rankId
         }}>+</div>
       </div>
 
-      {/* Bottom: brand + score */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <div style={{
@@ -185,7 +202,7 @@ function PodiumCard({ entry, rankIdx, isYou }: { entry: LeaderboardEntry; rankId
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Reset confirmation modal
+// Reset modal
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ResetModal({ onConfirm, onCancel, resetting }: {
@@ -198,10 +215,11 @@ function ResetModal({ onConfirm, onCancel, resetting }: {
       position: 'fixed', inset: 0, zIndex: 100,
       background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '0 20px',
     }}>
       <div style={{
         background: '#fff', borderRadius: 20,
-        padding: '36px 40px', maxWidth: 400, width: '90%',
+        padding: '32px 28px', maxWidth: 400, width: '100%',
         boxShadow: '0 40px 80px -20px rgba(0,0,0,0.35)',
         fontFamily: '"Geist", system-ui, sans-serif',
       }}>
@@ -217,14 +235,14 @@ function ResetModal({ onConfirm, onCancel, resetting }: {
         <p style={{ fontSize: 14, color: 'rgba(0,0,0,0.55)', lineHeight: 1.5, marginBottom: 28 }}>
           This will download the current list then permanently clear all leaderboard entries.
         </p>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
             onClick={onConfirm}
             disabled={resetting}
             style={{
-              flex: 1, padding: '13px 20px', borderRadius: 999,
+              width: '100%', padding: '14px 20px', borderRadius: 999,
               background: '#0A0A0A', color: '#fff',
-              border: 'none', fontSize: 13, fontWeight: 500,
+              border: 'none', fontSize: 14, fontWeight: 500,
               fontFamily: '"Geist", system-ui, sans-serif',
               opacity: resetting ? 0.6 : 1,
               cursor: resetting ? 'not-allowed' : 'pointer',
@@ -236,7 +254,7 @@ function ResetModal({ onConfirm, onCancel, resetting }: {
             onClick={onCancel}
             disabled={resetting}
             style={{
-              flex: 1, padding: '13px 20px', borderRadius: 999,
+              width: '100%', padding: '14px 20px', borderRadius: 999,
               background: 'transparent', border: '1px solid rgba(0,0,0,0.2)',
               color: '#0A0A0A', fontSize: 14, fontWeight: 500,
               fontFamily: '"Geist", system-ui, sans-serif',
@@ -258,6 +276,7 @@ function ResetModal({ onConfirm, onCancel, resetting }: {
 function LeaderboardInner() {
   const searchParams = useSearchParams();
   const youDomain = searchParams.get('you') ?? '';
+  const isMobile = useIsMobile();
 
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -265,7 +284,6 @@ function LeaderboardInner() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
 
-  // live clock
   useEffect(() => {
     const fmt = () => new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
     setTimeStr(fmt());
@@ -294,7 +312,6 @@ function LeaderboardInner() {
   const handleReset = async () => {
     setResetting(true);
     try {
-      // Download first, then clear
       if (entries.length > 0) downloadCSV(entries);
       await fetch('/api/reset', { method: 'POST' });
       setEntries([]);
@@ -312,17 +329,196 @@ function LeaderboardInner() {
   const isYou = (entry: LeaderboardEntry) =>
     youDomain ? normDomain(entry.domain) === normDomain(youDomain) : false;
 
-  // Top 3 in podium order: slot 0 = #2, slot 1 = #1, slot 2 = #3
   const top3 = entries.slice(0, 3);
-  const podiumOrder = [top3[1], top3[0], top3[2]]; // 2nd, 1st, 3rd
-  const podiumRankIdx = [1, 0, 2]; // rank indices for style lookup
+  const podiumOrder = [top3[1], top3[0], top3[2]];
+  const podiumRankIdx = [1, 0, 2];
 
+  // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div style={{ position: 'relative', minHeight: '100dvh', color: '#0A0A0A' }}>
+        <GrainyBg />
+
+        {/* Header */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 20,
+          background: 'rgba(236,234,230,0.9)', backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(0,0,0,0.07)',
+          padding: '14px 20px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/discover-logo-black.png" alt="Discover" style={{ height: 22, width: 'auto', display: 'block' }} />
+            <Link href="/" style={{
+              padding: '7px 14px', borderRadius: 999,
+              background: '#0A0A0A', color: '#fff',
+              fontSize: 12, fontWeight: 500,
+              fontFamily: '"Geist", system-ui, sans-serif',
+              textDecoration: 'none', letterSpacing: '0.01em',
+            }}>← Check your score</Link>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => entries.length > 0 && downloadCSV(entries)}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 999,
+                background: 'rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.12)',
+                color: 'rgba(0,0,0,0.6)', fontSize: 11, fontWeight: 500,
+                fontFamily: '"Geist Mono", ui-monospace, monospace',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                cursor: entries.length > 0 ? 'pointer' : 'not-allowed',
+                opacity: entries.length > 0 ? 1 : 0.4,
+              }}
+            >Download list</button>
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 999,
+                background: 'rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.12)',
+                color: 'rgba(0,0,0,0.6)', fontSize: 11, fontWeight: 500,
+                fontFamily: '"Geist Mono", ui-monospace, monospace',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
+            >Reset</button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ position: 'relative', zIndex: 3, padding: '24px 20px 80px' }}>
+          {/* Heading */}
+          <div style={{ marginBottom: 24 }}>
+            <Eyebrow color="rgba(0,0,0,0.55)">
+              04 — Leaderboard{timeStr ? ` · ${timeStr}` : ''}
+            </Eyebrow>
+            <h1 style={{
+              fontFamily: '"Instrument Serif", serif',
+              fontSize: 44, lineHeight: 0.94,
+              fontWeight: 400, letterSpacing: '-0.025em', margin: '10px 0 0',
+            }}>
+              Live from<br /><em style={{ fontStyle: 'italic' }}>First Mention.</em>
+            </h1>
+          </div>
+
+          {/* Ranked table */}
+          <div style={{
+            background: '#fff',
+            borderRadius: 18,
+            boxShadow: '0 20px 60px -15px rgba(0,0,0,0.16)',
+            overflow: 'hidden',
+          }}>
+            {/* Column headers */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '52px 1fr 56px',
+              padding: '12px 20px',
+              borderBottom: '1px solid rgba(0,0,0,0.07)',
+              background: 'rgba(0,0,0,0.015)',
+            }}>
+              {['Rank', 'Brand', 'Score'].map(h => (
+                <div key={h} style={{
+                  fontFamily: '"Geist Mono", ui-monospace, monospace',
+                  fontSize: 10, letterSpacing: '0.18em',
+                  textTransform: 'uppercase', color: 'rgba(0,0,0,0.38)', fontWeight: 500,
+                  textAlign: h === 'Score' ? 'right' : 'left',
+                }}>{h}</div>
+              ))}
+            </div>
+
+            {/* Loading */}
+            {loading && (
+              <div style={{
+                padding: '40px 20px', textAlign: 'center',
+                fontFamily: '"Geist", system-ui, sans-serif',
+                color: 'rgba(0,0,0,0.3)', fontSize: 15,
+              }}>Loading…</div>
+            )}
+
+            {/* Empty */}
+            {!loading && entries.length === 0 && (
+              <div style={{
+                padding: '48px 20px', textAlign: 'center',
+                fontFamily: '"Geist", system-ui, sans-serif',
+                color: 'rgba(0,0,0,0.3)', fontSize: 15,
+              }}>No entries yet.</div>
+            )}
+
+            {/* Rows */}
+            {entries.map((entry, idx) => {
+              const you = isYou(entry);
+              const isTop3 = idx < 3;
+              return (
+                <div
+                  key={entry.domain}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '52px 1fr 56px',
+                    alignItems: 'center',
+                    minHeight: isTop3 ? 64 : 54,
+                    padding: '0 20px',
+                    borderBottom: idx < entries.length - 1 ? '1px solid rgba(0,0,0,0.055)' : 'none',
+                    background: you ? 'rgba(255,110,60,0.045)' : 'transparent',
+                  }}
+                >
+                  <div>
+                    <span style={{
+                      fontFamily: '"Geist Mono", ui-monospace, monospace',
+                      fontSize: 13, color: 'rgba(0,0,0,0.32)', fontWeight: 500,
+                      letterSpacing: '0.04em',
+                    }}>#{String(idx + 1).padStart(2, '0')}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 12, minWidth: 0 }}>
+                    <div style={{
+                      fontFamily: '"Instrument Serif", serif',
+                      fontSize: isTop3 ? 20 : 17,
+                      fontWeight: 400, letterSpacing: '-0.01em',
+                      color: '#0A0A0A',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{entry.brand}</div>
+                    {you && (
+                      <div style={{
+                        flexShrink: 0,
+                        background: '#0A0A0A', color: '#fff',
+                        fontFamily: '"Geist Mono", ui-monospace, monospace',
+                        fontSize: 8, letterSpacing: '0.12em', fontWeight: 500,
+                        padding: '2px 6px', borderRadius: 999,
+                        textTransform: 'uppercase',
+                      }}>YOU</div>
+                    )}
+                  </div>
+                  <div style={{
+                    textAlign: 'right',
+                    fontFamily: '"Geist Mono", ui-monospace, monospace',
+                    fontSize: isTop3 ? 18 : 15,
+                    fontWeight: 500, color: '#0A0A0A',
+                  }}>
+                    {entry.score}
+                    <span style={{ fontSize: '0.7em', color: 'rgba(0,0,0,0.3)', marginLeft: 1 }}>%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <FooterRail compact />
+
+        {showResetConfirm && (
+          <ResetModal
+            onConfirm={handleReset}
+            onCancel={() => setShowResetConfirm(false)}
+            resetting={resetting}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ── DESKTOP LAYOUT ─────────────────────────────────────────────────────────
   return (
     <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', color: '#0A0A0A' }}>
       <GrainyBg />
       <GridLines />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
         padding: '28px 48px',
@@ -366,7 +562,7 @@ function LeaderboardInner() {
         </div>
       </div>
 
-      {/* ── Main content grid ── */}
+      {/* Main content grid */}
       <div style={{
         position: 'relative', zIndex: 3,
         height: '100vh',
@@ -377,9 +573,8 @@ function LeaderboardInner() {
         alignItems: 'start',
       }}>
 
-        {/* LEFT — heading + podium cards */}
+        {/* LEFT — heading + podium */}
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {/* Heading */}
           <div style={{ marginBottom: 'clamp(20px, 3vh, 36px)' }}>
             <Eyebrow color="rgba(0,0,0,0.55)">
               04 — Today&apos;s Leaderboard{timeStr ? ` · Updated ${timeStr}` : ''}
@@ -393,19 +588,14 @@ function LeaderboardInner() {
             </h1>
           </div>
 
-          {/* Podium cards */}
           {!loading && entries.length > 0 && (
             <div style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              gap: 10,
-              flex: 1,
-              maxHeight: 300,
+              display: 'flex', alignItems: 'flex-end', gap: 10,
+              flex: 1, maxHeight: 300,
             }}>
               {podiumOrder.map((entry, slotIdx) => {
                 const rankIdx = podiumRankIdx[slotIdx];
                 if (!entry) {
-                  // empty placeholder slot
                   return <div key={slotIdx} style={{ flex: 1, height: PODIUM_STYLES[rankIdx].height }} />;
                 }
                 return (
@@ -441,10 +631,8 @@ function LeaderboardInner() {
           flexDirection: 'column',
           maxHeight: 'calc(100vh - 170px)',
         }}>
-          {/* Column headers */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '64px 1fr 80px',
+            display: 'grid', gridTemplateColumns: '64px 1fr 80px',
             padding: '16px 32px',
             borderBottom: '1px solid rgba(0,0,0,0.07)',
             background: 'rgba(0,0,0,0.015)',
@@ -460,7 +648,6 @@ function LeaderboardInner() {
             ))}
           </div>
 
-          {/* Rows */}
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {loading && (
               <div style={{
@@ -480,15 +667,13 @@ function LeaderboardInner() {
 
             {entries.map((entry, idx) => {
               const you = isYou(entry);
-              // Use rank index for medal tier in top 3
               const isTop3 = idx < 3;
 
               return (
                 <div
                   key={entry.domain}
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: '64px 1fr 80px',
+                    display: 'grid', gridTemplateColumns: '64px 1fr 80px',
                     alignItems: 'center',
                     minHeight: isTop3 ? 80 : 66,
                     padding: '0 32px',
@@ -496,7 +681,6 @@ function LeaderboardInner() {
                     background: you ? 'rgba(255,110,60,0.045)' : 'transparent',
                   }}
                 >
-                  {/* Rank */}
                   <div>
                     <span style={{
                       fontFamily: '"Geist Mono", ui-monospace, monospace',
@@ -504,8 +688,6 @@ function LeaderboardInner() {
                       letterSpacing: '0.04em',
                     }}>#{String(idx + 1).padStart(2, '0')}</span>
                   </div>
-
-                  {/* Brand + YOU badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingRight: 16, minWidth: 0 }}>
                     <div style={{
                       fontFamily: '"Instrument Serif", serif',
@@ -525,14 +707,11 @@ function LeaderboardInner() {
                       }}>YOU</div>
                     )}
                   </div>
-
-                  {/* Score */}
                   <div style={{
                     textAlign: 'right',
                     fontFamily: '"Geist Mono", ui-monospace, monospace',
                     fontSize: isTop3 ? 22 : 18,
-                    fontWeight: 500,
-                    color: '#0A0A0A',
+                    fontWeight: 500, color: '#0A0A0A',
                   }}>
                     {entry.score}
                     <span style={{ fontSize: '0.7em', color: 'rgba(0,0,0,0.3)', marginLeft: 2 }}>%</span>
@@ -546,7 +725,6 @@ function LeaderboardInner() {
 
       <FooterRail />
 
-      {/* Reset confirm modal */}
       {showResetConfirm && (
         <ResetModal
           onConfirm={handleReset}
@@ -559,13 +737,13 @@ function LeaderboardInner() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Default export — Suspense boundary for useSearchParams
+// Default export
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Leaderboard() {
   return (
     <Suspense fallback={
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ECEAE6' }}>
+      <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ECEAE6' }}>
         <div style={{ fontFamily: '"Geist", system-ui, sans-serif', color: 'rgba(0,0,0,0.35)', fontSize: 15 }}>
           Loading…
         </div>
